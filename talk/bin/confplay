@@ -1,0 +1,62 @@
+#!/usr/bin/perl -w
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
+use strict;
+use Zone;
+my $confno = $Zone::agi->get_agi_var("extension");
+$confno =~ /\d(.*)$/;
+$confno = $1;
+if (!defined($confno))  { exit(1); }
+my $dbh_phone = $Zone::dbh_phone;
+set_lock($confno);
+my $sth_count = $dbh_phone->prepare("select count(*) from conf_play where confno = ?");
+my $sth_files = $dbh_phone->prepare("select id, file from conf_play where confno = ? order by id");
+my $sth_del = $dbh_phone->prepare("delete from conf_play where id = ?");
+$sth_count->execute($confno);
+my $count = $sth_count->fetchrow_array();
+while ($count > 0) {
+$sth_files->execute($confno);
+while (my($id, $file) = $sth_files->fetchrow_array()) {
+play_file($file);
+$sth_del->execute($id);
+}
+$sth_count->execute($confno);
+$count = $sth_count->fetchrow_array();
+}
+set_unlock($confno);
+exit(0);
+
+sub set_lock {
+my $confno = shift;
+my $sth_select = $dbh_phone->prepare("select count(*) from conf_playlock where confno = ?");
+my $sth_insert = $dbh_phone->prepare("insert into conf_playlock (confno) values (?)");
+$sth_select->execute($confno);
+my $locked = $sth_select->fetchrow_array();
+if ($locked == 1) {
+exit(1);
+}
+# lock not present
+$sth_insert->execute($confno);
+$locked=0; # assume failure
+$sth_select->execute($confno);
+$locked =$sth_select->fetchrow_array();
+if ($locked == 0) {
+say("playconf/unlocked");
+exit(1);
+}
+}
+
+sub set_unlock {
+my $confno = shift;
+my $sth_select = $dbh_phone->prepare("select count(*) from conf_playlock where confno = ?");
+my $sth_delete = $dbh_phone->prepare("delete from conf_playlock where confno = ?");
+$sth_delete->execute($confno);
+my $locked=1; # assume failure
+$sth_select->execute($confno);
+$locked = $sth_select->fetchrow_array;
+if ($locked == 1) {
+say("playconf/locked");
+exit(1);
+}
+}
+

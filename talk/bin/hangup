@@ -1,0 +1,12 @@
+#!/usr/bin/perl -w
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
+use strict;
+use warnings;
+use Zone;
+
+# this is called by asterisk if hangup is detected
+Zone::debug("hangup started");
+Zone::after_hangup();
+Zone::debug("hangup finished");
+

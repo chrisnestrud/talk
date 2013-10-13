@@ -1,0 +1,9 @@
+Long ago I considered making a phone system using Asterisk and AGI
+scripts which would be targeted at groups of people trying to organize
+and who did not have reliable internet access. The system includes
+new user registration including referral codes, private voicemail
+between users, public bulletin board-style conversation,
+along with public and private teleconferencing using Asterisk's meetme
+module.
+
+

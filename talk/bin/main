@@ -1,0 +1,63 @@
+#!/usr/bin/perl -w
+use strict;
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
+use MyAGI;
+use Zone;
+use Zone::Register;
+use Zone::Login;
+use Zone::MOTD;
+use Zone::Recname;
+use Zone::WW;
+use Zone::Voicemail;
+use Zone::Conference;
+use Zone::Account;
+use Zone::Boards;
+
+Zone::start_call();
+play_sound("main", "welcome", 1);
+my $resp = prompt_digits(sound_filename("main", "first menu"), "120", 1);
+if ($resp == 1) { goto LOGIN; }
+if ($resp == 2) {
+Zone::Register::main();
+goto LOGIN;
+}
+play_sound("main", "good bye not logged in");
+$Zone::agi->hangup();
+LOGIN:
+my $id = Zone::Login::main();
+if ($id == 0) {
+play_sound("main", "good bye not logged in");
+$Zone::agi->hangup();
+}
+set_location($id, 'login');
+play_sound("main", "logged in");
+Zone::MOTD::main($id);
+Zone::Recname::main($id);
+$resp=-1;
+while ($resp != 0) {
+set_location($id, "mainmenu");
+$resp = prompt_digits(sound_filename("main", "main menu"), "123490", 1);
+if ($resp == 1) {
+set_location($id, "ww");
+Zone::WW::main($id);
+}
+if ($resp == 2) {
+set_location($id, "voicemail");
+Zone::Voicemail::main($id);
+}
+if ($resp == 3) {
+set_location($id, "confmenu");
+Zone::Conference::main($id);
+}
+if ($resp == 4) {
+set_location($id, "boards");
+Zone::Boards::main($id);
+}
+if ($resp == 9) {
+set_location($id, "account");
+Zone::Account::main($id);
+}
+}
+play_sound("main", "good bye logged in");
+$Zone::agi->hangup();
